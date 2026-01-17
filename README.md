@@ -8,11 +8,11 @@
 </p>
 
 <p align="center">
+  <a href="https://github.com/ahmedmandur/hookreplay-cli/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/ahmedmandur/hookreplay-cli/ci.yml?branch=main&style=flat-square&label=build" alt="build status" /></a>
   <a href="https://www.npmjs.com/package/hookreplay"><img src="https://img.shields.io/npm/v/hookreplay?style=flat-square&color=black" alt="npm version" /></a>
   <a href="https://www.nuget.org/packages/HookReplay.Cli"><img src="https://img.shields.io/nuget/v/HookReplay.Cli?style=flat-square&color=black" alt="nuget version" /></a>
+  <a href="https://github.com/ahmedmandur/hookreplay-cli/releases"><img src="https://img.shields.io/github/v/release/ahmedmandur/hookreplay-cli?style=flat-square&color=black" alt="github release" /></a>
   <a href="https://github.com/ahmedmandur/hookreplay-cli/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-black?style=flat-square" alt="license" /></a>
-  <a href="https://github.com/ahmedmandur/hookreplay-cli/stargazers"><img src="https://img.shields.io/github/stars/ahmedmandur/hookreplay-cli?style=flat-square&color=black" alt="stars" /></a>
-  <a href="https://twitter.com/hookreplaydev"><img src="https://img.shields.io/twitter/follow/hookreplaydev?style=flat-square&color=black" alt="twitter" /></a>
 </p>
 
 <p align="center">

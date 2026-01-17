@@ -1,0 +1,219 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release (e.g., 1.0.0)'
+        required: true
+
+env:
+  DOTNET_VERSION: '9.0.x'
+  PROJECT_PATH: 'HookReplay.Cli.csproj'
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        include:
+          - os: windows-latest
+            rid: win-x64
+            artifact: hookreplay.exe
+          - os: windows-latest
+            rid: win-arm64
+            artifact: hookreplay.exe
+          - os: macos-latest
+            rid: osx-x64
+            artifact: hookreplay
+          - os: macos-latest
+            rid: osx-arm64
+            artifact: hookreplay
+          - os: ubuntu-latest
+            rid: linux-x64
+            artifact: hookreplay
+          - os: ubuntu-latest
+            rid: linux-arm64
+            artifact: hookreplay
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Get version
+        id: version
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            echo "version=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
+          else
+            echo "version=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Build
+        shell: bash
+        run: |
+          dotnet publish ${{ env.PROJECT_PATH }} \
+            -c Release \
+            -r ${{ matrix.rid }} \
+            --self-contained true \
+            -p:PublishSingleFile=true \
+            -p:EnableCompressionInSingleFile=true \
+            -p:Version=${{ steps.version.outputs.version }} \
+            -o ./publish/${{ matrix.rid }}
+
+      - name: Create archive (Windows)
+        if: startsWith(matrix.rid, 'win')
+        shell: pwsh
+        run: |
+          Compress-Archive -Path "./publish/${{ matrix.rid }}/${{ matrix.artifact }}" -DestinationPath "./hookreplay-${{ steps.version.outputs.version }}-${{ matrix.rid }}.zip"
+
+      - name: Create archive (Unix)
+        if: "!startsWith(matrix.rid, 'win')"
+        run: |
+          chmod +x ./publish/${{ matrix.rid }}/${{ matrix.artifact }}
+          tar -czf "./hookreplay-${{ steps.version.outputs.version }}-${{ matrix.rid }}.tar.gz" -C "./publish/${{ matrix.rid }}" ${{ matrix.artifact }}
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: hookreplay-${{ matrix.rid }}
+          path: |
+            *.zip
+            *.tar.gz
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Get version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            echo "version=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
+          else
+            echo "version=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ steps.version.outputs.version }}
+          name: HookReplay CLI v${{ steps.version.outputs.version }}
+          draft: false
+          prerelease: false
+          files: artifacts/*
+          body: |
+            ## HookReplay CLI v${{ steps.version.outputs.version }}
+
+            Debug webhooks locally with the HookReplay CLI.
+
+            ### Installation
+
+            **npm (Recommended)**
+            ```bash
+            npm install -g hookreplay
+            ```
+
+            **.NET Global Tool**
+            ```bash
+            dotnet tool install -g HookReplay.Cli
+            ```
+
+            **Manual Download**
+            Download the appropriate file for your platform below and add it to your PATH.
+
+            ### Quick Start
+            ```bash
+            hookreplay
+            > config api-key YOUR_API_KEY
+            > connect
+            ```
+
+  publish-nuget:
+    needs: release
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Get version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            echo "version=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
+          else
+            echo "version=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Pack NuGet
+        run: |
+          dotnet pack ${{ env.PROJECT_PATH }} \
+            -c Release \
+            -p:Version=${{ steps.version.outputs.version }} \
+            -o ./nupkg
+
+      - name: Publish to NuGet
+        run: |
+          dotnet nuget push ./nupkg/*.nupkg \
+            --api-key ${{ secrets.NUGET_API_KEY }} \
+            --source https://api.nuget.org/v3/index.json \
+            --skip-duplicate
+
+  publish-npm:
+    needs: release
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Get version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            echo "version=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
+          else
+            echo "version=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Update package version
+        run: |
+          cd packaging/npm
+          npm version ${{ steps.version.outputs.version }} --no-git-tag-version --allow-same-version
+
+      - name: Publish to npm
+        run: |
+          cd packaging/npm
+          npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
