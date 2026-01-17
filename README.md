@@ -108,6 +108,29 @@ Click "Send to CLI" on any captured webhook, and it will be forwarded to your lo
 
 ---
 
+## Self-Update
+
+The CLI can update itself without requiring npm or dotnet commands:
+
+```
+● hookreplay> update
+Downloading v1.0.16...
+✓ Updated to v1.0.16!
+Please restart the CLI to use the new version.
+```
+
+**How it works:**
+- On startup, the CLI checks for new versions from npm registry
+- When you run `update`, it downloads the new binary directly from [GitHub Releases](https://github.com/ahmedmandur/hookreplay-cli/releases)
+- The update works even while the CLI is running (no need to exit first)
+- After updating, restart the CLI to use the new version
+
+You can also update manually:
+- **npm**: `npm install -g hookreplay`
+- **dotnet**: `dotnet tool update -g HookReplay.Cli`
+
+---
+
 ## How It Works
 
 ```
