@@ -163,30 +163,12 @@ internal class Program
 
     private static async Task RunUpdateAsync()
     {
-        var updateCommand = DetectInstallationMethod();
-        var isNpmInstall = updateCommand?.Contains("npm") == true;
-
-        if (string.IsNullOrEmpty(updateCommand))
+        if (string.IsNullOrEmpty(_latestVersion))
         {
-            AnsiConsole.MarkupLine("[yellow]Could not detect installation method.[/]");
-            AnsiConsole.MarkupLine("[silver]Please update manually:[/]");
-            AnsiConsole.MarkupLine("  [white]npm install -g hookreplay[/]");
-            AnsiConsole.MarkupLine("  [silver]or[/]");
-            AnsiConsole.MarkupLine("  [white]dotnet tool update -g HookReplay.Cli[/]");
+            AnsiConsole.MarkupLine("[yellow]No update information available. Please try again later.[/]");
             return;
         }
 
-        // For npm installs, we need to exit first because the binary is locked while running
-        if (isNpmInstall)
-        {
-            AnsiConsole.MarkupLine("[cyan]To update, please run:[/]");
-            AnsiConsole.MarkupLine($"  [white]npm install -g hookreplay[/]");
-            AnsiConsole.WriteLine();
-            AnsiConsole.MarkupLine("[silver]The CLI must be closed before updating (npm cannot replace files in use).[/]");
-            return;
-        }
-
-        // For dotnet tool, we can try to update in place
         await AnsiConsole.Status()
             .Spinner(Spinner.Known.Dots)
             .SpinnerStyle(Style.Parse("cyan"))
@@ -194,64 +176,215 @@ internal class Program
             {
                 try
                 {
-                    ctx.Status($"Running: {updateCommand}");
-
-                    var process = new System.Diagnostics.Process
+                    var executablePath = Environment.ProcessPath;
+                    if (string.IsNullOrEmpty(executablePath))
                     {
-                        StartInfo = new System.Diagnostics.ProcessStartInfo
-                        {
-                            FileName = Environment.OSVersion.Platform == PlatformID.Win32NT ? "cmd.exe" : "/bin/sh",
-                            Arguments = Environment.OSVersion.Platform == PlatformID.Win32NT
-                                ? $"/c {updateCommand}"
-                                : $"-c \"{updateCommand}\"",
-                            RedirectStandardOutput = true,
-                            RedirectStandardError = true,
-                            UseShellExecute = false,
-                            CreateNoWindow = true
-                        }
-                    };
+                        AnsiConsole.MarkupLine("[red]Could not determine executable path.[/]");
+                        return;
+                    }
 
-                    process.Start();
-                    await process.WaitForExitAsync();
-
-                    if (process.ExitCode == 0)
+                    // Determine platform RID
+                    var rid = GetRuntimeIdentifier();
+                    if (string.IsNullOrEmpty(rid))
                     {
-                        AnsiConsole.MarkupLine("[green]✓ Update successful![/]");
-                        AnsiConsole.MarkupLine("[yellow]Please restart the CLI to use the new version.[/]");
+                        AnsiConsole.MarkupLine("[red]Unsupported platform for auto-update.[/]");
+                        AnsiConsole.MarkupLine("[silver]Please update manually: npm install -g hookreplay[/]");
+                        return;
+                    }
+
+                    var isWindows = Environment.OSVersion.Platform == PlatformID.Win32NT;
+                    var ext = isWindows ? "zip" : "tar.gz";
+                    var downloadUrl = $"https://github.com/ahmedmandur/hookreplay-cli/releases/download/v{_latestVersion}/hookreplay-{_latestVersion}-{rid}.{ext}";
+
+                    ctx.Status($"Downloading v{_latestVersion}...");
+
+                    using var client = new HttpClient();
+                    client.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("HookReplay-CLI", CurrentVersion));
+                    
+                    var response = await client.GetAsync(downloadUrl);
+                    if (!response.IsSuccessStatusCode)
+                    {
+                        AnsiConsole.MarkupLine($"[red]Download failed:[/] HTTP {(int)response.StatusCode}");
+                        AnsiConsole.MarkupLine("[silver]Please update manually: npm install -g hookreplay[/]");
+                        return;
+                    }
+
+                    var archiveBytes = await response.Content.ReadAsByteArrayAsync();
+                    ctx.Status("Extracting...");
+
+                    // Extract binary from archive
+                    byte[] binaryBytes;
+                    if (isWindows)
+                    {
+                        binaryBytes = ExtractFromZip(archiveBytes, "hookreplay.exe");
                     }
                     else
                     {
-                        var error = await process.StandardError.ReadToEndAsync();
-                        AnsiConsole.MarkupLine($"[red]Update failed:[/] {error}");
-                        AnsiConsole.MarkupLine("[silver]Try updating manually with:[/]");
-                        AnsiConsole.MarkupLine($"  [white]{updateCommand}[/]");
+                        binaryBytes = ExtractFromTarGz(archiveBytes, "hookreplay");
                     }
+
+                    if (binaryBytes.Length == 0)
+                    {
+                        AnsiConsole.MarkupLine("[red]Failed to extract binary from archive.[/]");
+                        return;
+                    }
+
+                    ctx.Status("Installing...");
+
+                    // Determine target path - for npm installs, replace hookreplay-bin
+                    var targetPath = executablePath;
+                    var binDir = Path.GetDirectoryName(executablePath) ?? "";
+                    
+                    // Check if this is an npm install (binary is named hookreplay-bin)
+                    if (Path.GetFileName(executablePath) == "hookreplay-bin" || 
+                        Path.GetFileName(executablePath) == "hookreplay-bin.exe")
+                    {
+                        targetPath = executablePath;
+                    }
+                    else if (File.Exists(Path.Combine(binDir, "hookreplay-bin")))
+                    {
+                        targetPath = Path.Combine(binDir, "hookreplay-bin");
+                    }
+                    else if (File.Exists(Path.Combine(binDir, "hookreplay-bin.exe")))
+                    {
+                        targetPath = Path.Combine(binDir, "hookreplay-bin.exe");
+                    }
+
+                    // On Unix, we can replace the running binary by writing to a temp file and moving
+                    // On Windows, we need to rename the old file first
+                    var tempPath = targetPath + ".new";
+                    var oldPath = targetPath + ".old";
+
+                    // Write new binary to temp file
+                    await File.WriteAllBytesAsync(tempPath, binaryBytes);
+
+                    // Make executable on Unix
+                    if (!isWindows)
+                    {
+                        var chmod = new System.Diagnostics.Process
+                        {
+                            StartInfo = new System.Diagnostics.ProcessStartInfo
+                            {
+                                FileName = "chmod",
+                                Arguments = $"+x \"{tempPath}\"",
+                                UseShellExecute = false,
+                                CreateNoWindow = true
+                            }
+                        };
+                        chmod.Start();
+                        await chmod.WaitForExitAsync();
+                    }
+
+                    // Atomic replace: rename current to .old, rename .new to current
+                    if (File.Exists(oldPath))
+                        File.Delete(oldPath);
+                    
+                    File.Move(targetPath, oldPath);
+                    File.Move(tempPath, targetPath);
+                    
+                    // Clean up old file
+                    try { File.Delete(oldPath); } catch { /* ignore */ }
+
+                    AnsiConsole.MarkupLine($"[green]✓ Updated to v{_latestVersion}![/]");
+                    AnsiConsole.MarkupLine("[yellow]Please restart the CLI to use the new version.[/]");
                 }
                 catch (Exception ex)
                 {
                     AnsiConsole.MarkupLine($"[red]Update failed:[/] {ex.Message}");
+                    AnsiConsole.MarkupLine("[silver]Please update manually: npm install -g hookreplay[/]");
                 }
             });
     }
 
-    private static string? DetectInstallationMethod()
+    private static string? GetRuntimeIdentifier()
     {
-        // Check if installed via npm (look for node_modules pattern in path)
-        var executablePath = Environment.ProcessPath ?? "";
-
-        if (executablePath.Contains("node_modules") || executablePath.Contains("npm"))
+        var arch = System.Runtime.InteropServices.RuntimeInformation.OSArchitecture;
+        var archStr = arch switch
         {
-            return "npm update -g hookreplay";
+            System.Runtime.InteropServices.Architecture.X64 => "x64",
+            System.Runtime.InteropServices.Architecture.Arm64 => "arm64",
+            _ => null
+        };
+
+        if (archStr == null) return null;
+
+        if (Environment.OSVersion.Platform == PlatformID.Win32NT)
+            return $"win-{archStr}";
+        if (Environment.OSVersion.Platform == PlatformID.Unix)
+        {
+            // Check if macOS or Linux
+            if (System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.OSX))
+                return $"osx-{archStr}";
+            return $"linux-{archStr}";
         }
 
-        // Check if installed via dotnet tool
-        if (executablePath.Contains(".dotnet") || executablePath.Contains("dotnet"))
+        return null;
+    }
+
+    private static byte[] ExtractFromZip(byte[] zipBytes, string fileName)
+    {
+        using var stream = new MemoryStream(zipBytes);
+        using var archive = new System.IO.Compression.ZipArchive(stream, System.IO.Compression.ZipArchiveMode.Read);
+        
+        foreach (var entry in archive.Entries)
         {
-            return "dotnet tool update -g HookReplay.Cli";
+            if (entry.Name.Equals(fileName, StringComparison.OrdinalIgnoreCase))
+            {
+                using var entryStream = entry.Open();
+                using var ms = new MemoryStream();
+                entryStream.CopyTo(ms);
+                return ms.ToArray();
+            }
+        }
+        return Array.Empty<byte>();
+    }
+
+    private static byte[] ExtractFromTarGz(byte[] tarGzBytes, string fileName)
+    {
+        using var gzStream = new MemoryStream(tarGzBytes);
+        using var decompressed = new System.IO.Compression.GZipStream(gzStream, System.IO.Compression.CompressionMode.Decompress);
+        using var tarStream = new MemoryStream();
+        decompressed.CopyTo(tarStream);
+        tarStream.Position = 0;
+
+        // Simple tar parsing (POSIX ustar format)
+        var buffer = tarStream.ToArray();
+        var offset = 0;
+
+        while (offset < buffer.Length - 512)
+        {
+            // Read header
+            var header = new byte[512];
+            Array.Copy(buffer, offset, header, 0, 512);
+
+            // Check for empty block (end of archive)
+            if (header[0] == 0) break;
+
+            // Get filename (first 100 bytes, null-terminated)
+            var nameBytes = new byte[100];
+            Array.Copy(header, 0, nameBytes, 0, 100);
+            var name = Encoding.ASCII.GetString(nameBytes).TrimEnd('\0').Trim();
+
+            // Get file size (bytes 124-135, octal)
+            var sizeBytes = new byte[12];
+            Array.Copy(header, 124, sizeBytes, 0, 12);
+            var sizeStr = Encoding.ASCII.GetString(sizeBytes).TrimEnd('\0').Trim();
+            var size = string.IsNullOrEmpty(sizeStr) ? 0 : Convert.ToInt64(sizeStr, 8);
+
+            offset += 512; // Move past header
+
+            if (name == fileName || name.EndsWith("/" + fileName))
+            {
+                var content = new byte[size];
+                Array.Copy(buffer, offset, content, 0, (int)size);
+                return content;
+            }
+
+            // Move to next file (size rounded up to 512-byte boundary)
+            offset += (int)((size + 511) / 512 * 512);
         }
 
-        // Default to npm as it's the recommended method
-        return "npm update -g hookreplay";
+        return Array.Empty<byte>();
     }
 
     private static void ShowVersion()
