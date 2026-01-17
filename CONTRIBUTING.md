@@ -10,7 +10,7 @@ Be kind and respectful. We're all here to build great developer tools.
 
 ### Reporting Bugs
 
-1. Check if the issue already exists in [GitHub Issues](https://github.com/hookreplay/cli/issues)
+1. Check if the issue already exists in [GitHub Issues](https://github.com/ahmedmandur/hookreplay-cli/issues)
 2. If not, create a new issue with:
    - Clear title and description
    - Steps to reproduce
@@ -20,7 +20,7 @@ Be kind and respectful. We're all here to build great developer tools.
 
 ### Suggesting Features
 
-1. Open a [GitHub Issue](https://github.com/hookreplay/cli/issues) with the `enhancement` label
+1. Open a [GitHub Issue](https://github.com/ahmedmandur/hookreplay-cli/issues) with the `enhancement` label
 2. Describe the problem you're trying to solve
 3. Explain your proposed solution
 4. We'll discuss before you start coding
@@ -139,7 +139,7 @@ To test manually:
 
 ## Questions?
 
-- Open a [GitHub Discussion](https://github.com/hookreplay/cli/discussions)
+- Open a [GitHub Discussion](https://github.com/ahmedmandur/hookreplay-cli/discussions)
 - Tweet at [@hookreplaydev](https://twitter.com/hookreplaydev)
 
 ## License

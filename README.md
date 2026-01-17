@@ -10,13 +10,15 @@
 <p align="center">
   <a href="https://www.npmjs.com/package/hookreplay"><img src="https://img.shields.io/npm/v/hookreplay?style=flat-square&color=black" alt="npm version" /></a>
   <a href="https://www.nuget.org/packages/HookReplay.Cli"><img src="https://img.shields.io/nuget/v/HookReplay.Cli?style=flat-square&color=black" alt="nuget version" /></a>
-  <a href="https://github.com/hookreplay/cli/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-black?style=flat-square" alt="license" /></a>
+  <a href="https://github.com/ahmedmandur/hookreplay-cli/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-black?style=flat-square" alt="license" /></a>
+  <a href="https://github.com/ahmedmandur/hookreplay-cli/stargazers"><img src="https://img.shields.io/github/stars/ahmedmandur/hookreplay-cli?style=flat-square&color=black" alt="stars" /></a>
   <a href="https://twitter.com/hookreplaydev"><img src="https://img.shields.io/twitter/follow/hookreplaydev?style=flat-square&color=black" alt="twitter" /></a>
 </p>
 
 <p align="center">
   <a href="https://hookreplay.dev">Website</a> •
   <a href="https://hookreplay.dev/docs">Documentation</a> •
+  <a href="https://github.com/ahmedmandur/hookreplay-cli">GitHub</a> •
   <a href="https://twitter.com/hookreplaydev">Twitter</a>
 </p>
 
@@ -192,7 +194,7 @@ dotnet run
 - **Website**: [hookreplay.dev](https://hookreplay.dev)
 - **Documentation**: [hookreplay.dev/docs](https://hookreplay.dev/docs)
 - **Twitter**: [@hookreplaydev](https://twitter.com/hookreplaydev)
-- **Issues**: [GitHub Issues](https://github.com/hookreplay/cli/issues)
+- **Issues**: [GitHub Issues](https://github.com/ahmedmandur/hookreplay-cli/issues)
 
 ---
 
