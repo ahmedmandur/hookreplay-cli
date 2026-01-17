@@ -163,6 +163,30 @@ internal class Program
 
     private static async Task RunUpdateAsync()
     {
+        var updateCommand = DetectInstallationMethod();
+        var isNpmInstall = updateCommand?.Contains("npm") == true;
+
+        if (string.IsNullOrEmpty(updateCommand))
+        {
+            AnsiConsole.MarkupLine("[yellow]Could not detect installation method.[/]");
+            AnsiConsole.MarkupLine("[silver]Please update manually:[/]");
+            AnsiConsole.MarkupLine("  [white]npm install -g hookreplay[/]");
+            AnsiConsole.MarkupLine("  [silver]or[/]");
+            AnsiConsole.MarkupLine("  [white]dotnet tool update -g HookReplay.Cli[/]");
+            return;
+        }
+
+        // For npm installs, we need to exit first because the binary is locked while running
+        if (isNpmInstall)
+        {
+            AnsiConsole.MarkupLine("[cyan]To update, please run:[/]");
+            AnsiConsole.MarkupLine($"  [white]npm install -g hookreplay[/]");
+            AnsiConsole.WriteLine();
+            AnsiConsole.MarkupLine("[silver]The CLI must be closed before updating (npm cannot replace files in use).[/]");
+            return;
+        }
+
+        // For dotnet tool, we can try to update in place
         await AnsiConsole.Status()
             .Spinner(Spinner.Known.Dots)
             .SpinnerStyle(Style.Parse("cyan"))
@@ -170,19 +194,6 @@ internal class Program
             {
                 try
                 {
-                    // Detect installation method and update accordingly
-                    var updateCommand = DetectInstallationMethod();
-
-                    if (string.IsNullOrEmpty(updateCommand))
-                    {
-                        AnsiConsole.MarkupLine("[yellow]Could not detect installation method.[/]");
-                        AnsiConsole.MarkupLine("[silver]Please update manually:[/]");
-                        AnsiConsole.MarkupLine("  [white]npm update -g hookreplay[/]");
-                        AnsiConsole.MarkupLine("  [silver]or[/]");
-                        AnsiConsole.MarkupLine("  [white]dotnet tool update -g HookReplay.Cli[/]");
-                        return;
-                    }
-
                     ctx.Status($"Running: {updateCommand}");
 
                     var process = new System.Diagnostics.Process
