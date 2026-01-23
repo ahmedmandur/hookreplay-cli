@@ -227,6 +227,35 @@ MIT License - see [LICENSE](LICENSE) for details.
 
 ---
 
+## Changelog
+
+### v1.0.17 (2026-01-23)
+
+#### 🐛 Bug Fixes
+- **Fixed response body display**: HTML/XML responses with `[` and `]` characters no longer crash the CLI with "malformed markup tag" errors
+- **Fixed Spectre.Console markup escaping**: All user-generated content is now properly escaped before rendering
+
+#### ✨ New Features
+- **Auto-reconnect**: CLI now automatically reconnects when the connection drops unexpectedly
+  - Uses exponential backoff: 1s → 2s → 5s → 10s → 30s delays
+  - Attempts up to 10 reconnections before giving up
+  - Manual disconnect (`disconnect` command or Ctrl+C) disables auto-reconnect
+  - Shows clear status messages during reconnection attempts
+
+#### 🔧 Improvements
+- Better error messages with escaped content to prevent display issues
+- Connection state is properly tracked across reconnection attempts
+
+---
+
+### v1.0.16
+
+- Self-update feature: CLI can update itself without npm/dotnet commands
+- Version checking against npm registry on startup
+- Direct binary download from GitHub Releases
+
+---
+
 <p align="center">
   <strong>Stop chasing webhooks. Start catching bugs.</strong>
   <br />

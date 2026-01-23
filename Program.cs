@@ -39,6 +39,12 @@ internal class Program
     private static CancellationTokenSource? _connectionCts;
     private static Task? _sseListenerTask;
     private static string? _latestVersion;
+    private static string? _currentSseUrl;
+    private static string? _currentApiKey;
+    private static bool _autoReconnectEnabled = true;
+    private static int _reconnectAttempts = 0;
+    private const int MaxReconnectAttempts = 10;
+    private static readonly int[] ReconnectDelaysMs = [1000, 2000, 5000, 10000, 30000];
 
     private static async Task<int> Main(string[] args)
     {
@@ -584,6 +590,12 @@ internal class Program
                     new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", apiKey);
 
                 _connectionCts = new CancellationTokenSource();
+                
+                // Store connection info for reconnection
+                _currentSseUrl = sseUrl;
+                _currentApiKey = apiKey;
+                _autoReconnectEnabled = true;
+                _reconnectAttempts = 0;
 
                 // Start listening to SSE events in background
                 _sseListenerTask = ListenToSseAsync(sseUrl, _connectionCts.Token);
@@ -664,20 +676,55 @@ internal class Program
         }
         catch (OperationCanceledException)
         {
-            // Normal disconnection
+            // Normal disconnection - don't auto-reconnect
+            _autoReconnectEnabled = false;
         }
         catch (Exception ex)
         {
             AnsiConsole.WriteLine();
-            AnsiConsole.MarkupLine($"[red]SSE connection error:[/] {ex.Message}");
+            AnsiConsole.MarkupLine($"[red]SSE connection error:[/] {Markup.Escape(ex.Message)}");
         }
         finally
         {
             _isConnected = false;
             AnsiConsole.WriteLine();
-            AnsiConsole.MarkupLine("[yellow]Disconnected from server.[/]");
-            AnsiConsole.Markup(_isConnected ? "[green]●[/] [green]hookreplay[/]> " : "[red]●[/] [blue]hookreplay[/]> ");
         }
+        
+        // Attempt auto-reconnect if not manually disconnected (moved outside finally)
+        if (_autoReconnectEnabled && !cancellationToken.IsCancellationRequested && _reconnectAttempts < MaxReconnectAttempts)
+        {
+            _reconnectAttempts++;
+            var delayIndex = Math.Min(_reconnectAttempts - 1, ReconnectDelaysMs.Length - 1);
+            var delayMs = ReconnectDelaysMs[delayIndex];
+            
+            AnsiConsole.MarkupLine($"[yellow]Connection lost. Reconnecting in {delayMs / 1000}s (attempt {_reconnectAttempts}/{MaxReconnectAttempts})...[/]");
+            
+            try
+            {
+                await Task.Delay(delayMs, cancellationToken);
+                
+                if (!cancellationToken.IsCancellationRequested && _currentSseUrl != null)
+                {
+                    // Reconnect
+                    await ListenToSseAsync(_currentSseUrl, cancellationToken);
+                    return; // Don't show disconnected message
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                // Cancelled during reconnect delay
+            }
+        }
+        else if (_reconnectAttempts >= MaxReconnectAttempts)
+        {
+            AnsiConsole.MarkupLine("[red]Max reconnection attempts reached. Use 'connect' to reconnect manually.[/]");
+        }
+        else if (!_autoReconnectEnabled || cancellationToken.IsCancellationRequested)
+        {
+            AnsiConsole.MarkupLine("[yellow]Disconnected from server.[/]");
+        }
+        
+        AnsiConsole.Markup(_isConnected ? "[green]●[/] [green]hookreplay[/]> " : "[red]●[/] [blue]hookreplay[/]> ");
     }
 
     private static async Task HandleSseEvent(string eventType, string data)
@@ -686,6 +733,7 @@ internal class Program
         {
             case "connected":
                 _isConnected = true;
+                _reconnectAttempts = 0; // Reset reconnect counter on successful connection
                 try
                 {
                     var connectedEvent = JsonSerializer.Deserialize(data, CliJsonContext.Default.SseConnectedEvent);
@@ -835,8 +883,11 @@ internal class Program
 
                 if (displayBody.Length > 500)
                 {
-                    displayBody = displayBody[..500] + "\n[silver]... (truncated)[/]";
+                    displayBody = displayBody[..500] + "... (truncated)";
                 }
+
+                // Escape markup characters to prevent Spectre.Console from interpreting them
+                displayBody = Markup.Escape(displayBody);
 
                 AnsiConsole.Write(new Panel(displayBody)
                     .Header("[silver]Response Body[/]")
@@ -859,6 +910,9 @@ internal class Program
             return;
         }
 
+        // Disable auto-reconnect for manual disconnect
+        _autoReconnectEnabled = false;
+        
         await _connectionCts?.CancelAsync();
 
         if (_sseListenerTask != null)
