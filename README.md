@@ -220,6 +220,15 @@ MIT License - see [LICENSE](LICENSE) for details.
 
 ## Changelog
 
+### v1.0.19 (2026-01-23)
+
+#### 📚 Documentation
+- Fixed repository URLs in README and CONTRIBUTING.md
+- Added contributing section to npm README
+- Updated project structure documentation
+
+---
+
 ### v1.0.18 (2026-01-23)
 
 #### 🐛 Bug Fixes

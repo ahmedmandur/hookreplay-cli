@@ -64,6 +64,14 @@ Webhook Provider → HookReplay → CLI → localhost:3000
 
 ## Changelog
 
+### v1.0.19 (2026-01-23)
+
+#### 📚 Documentation
+- Fixed repository URLs in README and CONTRIBUTING.md
+- Added contributing section
+
+---
+
 ### v1.0.18 (2026-01-23)
 
 #### 🐛 Bug Fixes
