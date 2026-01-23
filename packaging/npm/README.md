@@ -81,6 +81,22 @@ Webhook Provider → HookReplay → CLI → localhost:3000
 - Self-update feature: CLI can update itself
 - Version checking on startup
 
+## Contributing
+
+We welcome contributions! See [CONTRIBUTING.md](https://github.com/ahmedmandur/hookreplay-cli/blob/main/CONTRIBUTING.md) for guidelines.
+
+```bash
+# Clone the repo
+git clone https://github.com/ahmedmandur/hookreplay-cli.git
+cd hookreplay-cli
+
+# Build
+dotnet build
+
+# Run
+dotnet run --project src/HookReplay.Cli
+```
+
 ## Links
 
 - **Website:** https://hookreplay.dev

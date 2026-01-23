@@ -191,14 +191,14 @@ We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guid
 
 ```bash
 # Clone the repo
-git clone https://github.com/hookreplay/cli.git
-cd cli
+git clone https://github.com/ahmedmandur/hookreplay-cli.git
+cd hookreplay-cli
 
 # Build
 dotnet build
 
 # Run
-dotnet run
+dotnet run --project src/HookReplay.Cli
 ```
 
 ---

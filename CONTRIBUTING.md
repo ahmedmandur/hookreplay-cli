@@ -47,8 +47,8 @@ Be kind and respectful. We're all here to build great developer tools.
 
 ```bash
 # Clone your fork
-git clone https://github.com/YOUR_USERNAME/cli.git
-cd cli
+git clone https://github.com/YOUR_USERNAME/hookreplay-cli.git
+cd hookreplay-cli
 
 # Restore dependencies
 dotnet restore
@@ -57,7 +57,7 @@ dotnet restore
 dotnet build
 
 # Run
-dotnet run
+dotnet run --project src/HookReplay.Cli
 
 # Run tests
 dotnet test
@@ -66,12 +66,18 @@ dotnet test
 ### Project Structure
 
 ```
-src/HookReplay.Cli/
-├── Program.cs          # Main entry point and all CLI logic
-├── README.md           # This file
-├── LICENSE             # MIT License
-├── CONTRIBUTING.md     # Contribution guidelines
-└── HookReplay.Cli.csproj
+hookreplay-cli/
+├── src/
+│   └── HookReplay.Cli/
+│       ├── Program.cs              # Main entry point and all CLI logic
+│       ├── HookReplay.Cli.csproj   # Project file
+│       ├── README.md               # NuGet README
+│       ├── CONTRIBUTING.md         # Contribution guidelines
+│       └── packaging/
+│           └── npm/
+│               └── README.md       # npm README
+├── LICENSE                         # MIT License
+└── README.md                       # Repository README
 ```
 
 ## Coding Guidelines
