@@ -1,6 +1,12 @@
 # HookReplay CLI
 
+**Capture once. Replay forever.**
+
 Debug webhooks locally. Capture, inspect, and replay webhooks to your local development server.
+
+[![npm version](https://img.shields.io/npm/v/hookreplay?style=flat-square&color=black)](https://www.npmjs.com/package/hookreplay)
+[![nuget version](https://img.shields.io/nuget/v/HookReplay.Cli?style=flat-square&color=black)](https://www.nuget.org/packages/HookReplay.Cli)
+[![license](https://img.shields.io/badge/license-MIT-black?style=flat-square)](https://github.com/ahmedmandur/hookreplay-cli/blob/main/LICENSE)
 
 ## Installation
 
@@ -40,6 +46,8 @@ dotnet tool install --global HookReplay.Cli
 | `status` | Show connection status |
 | `history` | Show received requests |
 | `replay <id> [url]` | Replay a request |
+| `version` | Show version info |
+| `update` | Check for and install updates |
 | `quit` | Exit the CLI |
 
 ## How It Works
@@ -54,9 +62,30 @@ Webhook Provider → HookReplay → CLI → localhost:3000
 4. Connect CLI and click "Send to CLI" to forward to localhost
 5. Debug with your IDE's breakpoints
 
+## Changelog
+
+### v1.0.18 (2026-01-23)
+
+#### 🐛 Bug Fixes
+- **Fixed response body display**: HTML/XML responses with `[` and `]` characters no longer crash the CLI
+- **Fixed markup escaping**: All response content is now properly escaped
+
+#### ✨ New Features
+- **Auto-reconnect**: CLI automatically reconnects when the connection drops
+  - Exponential backoff: 1s → 2s → 5s → 10s → 30s
+  - Up to 10 reconnection attempts
+  - Manual disconnect disables auto-reconnect
+
+### v1.0.17
+
+- Self-update feature: CLI can update itself
+- Version checking on startup
+
 ## Links
 
 - **Website:** https://hookreplay.dev
+- **Documentation:** https://hookreplay.dev/docs
+- **GitHub:** https://github.com/ahmedmandur/hookreplay-cli
 
 ## License
 

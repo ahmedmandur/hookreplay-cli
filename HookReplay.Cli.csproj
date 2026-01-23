@@ -25,7 +25,7 @@
     <TrimMode>link</TrimMode>
 
     <!-- Package metadata for NuGet -->
-    <Version>1.0.17</Version>
+    <Version>1.0.18</Version>
     <Authors>HookReplay</Authors>
     <Company>HookReplay</Company>
     <Description>Debug webhooks locally with HookReplay CLI. Capture, inspect, and replay webhooks to your local development server.</Description>

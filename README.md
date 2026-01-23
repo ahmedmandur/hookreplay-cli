@@ -1,26 +1,17 @@
-<p align="center">
-  <h1 align="center">HookReplay CLI</h1>
-  <p align="center">
-    <strong>Capture once. Replay forever.</strong>
-    <br />
-    Debug webhooks on localhost without the tunnel pain.
-  </p>
-</p>
+# HookReplay CLI
 
-<p align="center">
-  <a href="https://github.com/ahmedmandur/hookreplay-cli/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/ahmedmandur/hookreplay-cli/ci.yml?branch=main&style=flat-square&label=build" alt="build status" /></a>
-  <a href="https://www.npmjs.com/package/hookreplay"><img src="https://img.shields.io/npm/v/hookreplay?style=flat-square&color=black" alt="npm version" /></a>
-  <a href="https://www.nuget.org/packages/HookReplay.Cli"><img src="https://img.shields.io/nuget/v/HookReplay.Cli?style=flat-square&color=black" alt="nuget version" /></a>
-  <a href="https://github.com/ahmedmandur/hookreplay-cli/releases"><img src="https://img.shields.io/github/v/release/ahmedmandur/hookreplay-cli?style=flat-square&color=black" alt="github release" /></a>
-  <a href="https://github.com/ahmedmandur/hookreplay-cli/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-black?style=flat-square" alt="license" /></a>
-</p>
+**Capture once. Replay forever.**
 
-<p align="center">
-  <a href="https://hookreplay.dev">Website</a> •
-  <a href="https://hookreplay.dev/docs">Documentation</a> •
-  <a href="https://github.com/ahmedmandur/hookreplay-cli">GitHub</a> •
-  <a href="https://twitter.com/hookreplaydev">Twitter</a>
-</p>
+Debug webhooks on localhost without the tunnel pain.
+
+---
+
+[![build status](https://img.shields.io/github/actions/workflow/status/ahmedmandur/hookreplay-cli/ci.yml?branch=main&style=flat-square&label=build)](https://github.com/ahmedmandur/hookreplay-cli/actions/workflows/ci.yml)
+[![npm version](https://img.shields.io/npm/v/hookreplay?style=flat-square&color=black)](https://www.npmjs.com/package/hookreplay)
+[![nuget version](https://img.shields.io/nuget/v/HookReplay.Cli?style=flat-square&color=black)](https://www.nuget.org/packages/HookReplay.Cli)
+[![license](https://img.shields.io/badge/license-MIT-black?style=flat-square)](https://github.com/ahmedmandur/hookreplay-cli/blob/main/LICENSE)
+
+[Website](https://hookreplay.dev) • [Documentation](https://hookreplay.dev/docs) • [GitHub](https://github.com/ahmedmandur/hookreplay-cli) • [Twitter](https://twitter.com/hookreplaydev)
 
 ---
 
@@ -229,7 +220,7 @@ MIT License - see [LICENSE](LICENSE) for details.
 
 ## Changelog
 
-### v1.0.17 (2026-01-23)
+### v1.0.18 (2026-01-23)
 
 #### 🐛 Bug Fixes
 - **Fixed response body display**: HTML/XML responses with `[` and `]` characters no longer crash the CLI with "malformed markup tag" errors
@@ -248,7 +239,7 @@ MIT License - see [LICENSE](LICENSE) for details.
 
 ---
 
-### v1.0.16
+### v1.0.17
 
 - Self-update feature: CLI can update itself without npm/dotnet commands
 - Version checking against npm registry on startup
@@ -256,8 +247,6 @@ MIT License - see [LICENSE](LICENSE) for details.
 
 ---
 
-<p align="center">
-  <strong>Stop chasing webhooks. Start catching bugs.</strong>
-  <br />
-  <a href="https://hookreplay.dev">Get started free →</a>
-</p>
+**Stop chasing webhooks. Start catching bugs.**
+
+[Get started free →](https://hookreplay.dev)
